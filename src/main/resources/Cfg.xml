@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<root>
+        <senders>
+            <dataset datasetName="dataset1" iface="\Device\NPF_{7AF074C8-513D-4735-8FF3-3488258C0340}"
+                     macSource="0a:00:27:00:00:15" macDestination="0a:00:27:00:00:15" goCbRef="GOcbReference"
+                     goID="GOcbReference">
+                <item type="Boolean" value="false"/>
+                <item type="Integer" value="666666"/>
+            </dataset>
+        </senders>
+</root>
+
