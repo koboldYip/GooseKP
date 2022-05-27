@@ -1,6 +1,8 @@
 import lombok.Data;
 import lombok.SneakyThrows;
-import org.pcap4j.core.*;
+import org.pcap4j.core.PcapHandle;
+import org.pcap4j.core.PcapNetworkInterface;
+import org.pcap4j.core.Pcaps;
 import org.pcap4j.packet.EthernetPacket;
 
 import java.nio.ByteBuffer;
@@ -35,6 +37,7 @@ public class GOOSE implements Runnable {
 
     private final byte[] bool = {(byte) 0x83, 0x01};
     private final byte[] int32 = {(byte) 0x85, 0x05};
+    private final byte[] float32 = {(byte) 0x87, 0x05};
 
     private final byte[] goCBRef = {(byte) 0x80, 0x00};
     private final byte[] datSet = {(byte) 0x82, 0x00};
@@ -54,8 +57,9 @@ public class GOOSE implements Runnable {
 
     private byte[] valueBool = {0x01};
     private byte[] valueInt32 = {0x00, 0x00, 0x00, 0x00, 0x00};
+    private byte[] valueFloat32 = {0x00, 0x00, 0x00, 0x00, 0x00};
 
-    private byte[] valueTimeAllowedToLive = {0x00, 0x00, 0x00, 0x00, 0x02};
+    private byte[] valueTimeAllowedToLive = {0x00, 0x00, 0x00, 0x00, 0x06};
     private byte[] valueT = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
     private byte[] valueNumDatSetEntries = {0x00, 0x00, 0x00, 0x00, 0x00};
 
@@ -65,45 +69,42 @@ public class GOOSE implements Runnable {
 
     private ByteBuffer buffer;
 
-    private int time = 1;
-    private int delay = 50;
-    ScheduledExecutorService ses;
+    private int time = 4;
+    private int delay = 2000;
 
     private int lenGoose;
+    private int lenAllowTime;
+    private int lenSq;
+    private int lenData;
     private int conf;
     private int sq;
     private int st;
 
     private List<PcapNetworkInterface> ifs;
+    private ScheduledExecutorService ses;
     private PcapHandle sendHandle;
     private EthernetPacket packet;
-
-
-    public void createGOOSE(DataSet dataSet) {
-        createHeader(dataSet);
-        createData(dataSet);
-    }
+    private byte[] pack;
 
     @SneakyThrows
-    public GOOSE() {
-        conf = 0;
-        sq = 0;
-        st = 0;
-        ses = Executors.newSingleThreadScheduledExecutor();
+    public void createGOOSE(DataSet dataSet) {
         ifs = Pcaps.findAllDevs();
         PcapNetworkInterface activeInterface = null;
         for (PcapNetworkInterface pcapIface : ifs) {
-            if (pcapIface != null && pcapIface.getDescription().contains("Famatech")) {
+            if (pcapIface != null && pcapIface.getName().contains(dataSet.getIface())) {
                 activeInterface = pcapIface;
                 break;
             }
         }
         assert activeInterface != null;
         sendHandle = activeInterface.openLive(65536, PcapNetworkInterface.PromiscuousMode.PROMISCUOUS, 50);
+        createHeader(dataSet);
+        createData(dataSet);
+        createMessage();
     }
 
     @SneakyThrows
-    public void createMessage() {
+    private void createMessage() {
         buffer = ByteBuffer.allocate(lenGoose);
 
         buffer.put(destination)
@@ -138,9 +139,9 @@ public class GOOSE implements Runnable {
                 .put(valueNumDatSetEntries)
                 .put(allDate);
         dat.forEach(this::typeValue);
-
+        ses = Executors.newSingleThreadScheduledExecutor();
         packet = EthernetPacket.newPacket(buffer.array(), 0, lenGoose);
-
+        run();
     }
 
     private void typeValue(Item e) {
@@ -151,6 +152,10 @@ public class GOOSE implements Runnable {
             case "Integer" -> buffer.put(int32)
                     .put(ByteBuffer.allocate(5).putInt(1, Integer.parseInt(e.getValue())).array());
 
+            case "Float" -> buffer.put(float32)
+                    .put(ByteBuffer.allocate(5).put(new byte[]{0x08})
+                            .putFloat(Float.parseFloat(e.getValue())).array());
+
         }
     }
 
@@ -160,12 +165,14 @@ public class GOOSE implements Runnable {
         valueSqNum = new byte[]{0x00, 0x00, 0x00, 0x00, 0x00};
         valueConfRev = new byte[]{0x00, 0x00, 0x00, 0x00, 0x00};
         valueStNum = new byte[]{0x00, 0x00, 0x00, 0x00, 0x00};
+        conf = 0;
+        st = 0;
         sq = 0;
         st++;
+        conf++;
         valueConfRev = ByteBuffer.allocate(5).putInt(1, conf).array();
         valueStNum = ByteBuffer.allocate(5).putInt(1, st).array();
         valueDatSet = dataSet.getDatasetName().getBytes(StandardCharsets.UTF_8);
-        conf++;
 
         valueT = ByteBuffer.allocate(8)
                 .putInt((int) (Instant.now().getEpochSecond()))
@@ -198,7 +205,7 @@ public class GOOSE implements Runnable {
         valueNumDatSetEntries = ByteBuffer.allocate(5).putInt(1, dat.size()).array();
         valueAllDate = (byte) dat.size();
 
-        lenGoose = destination.length +
+        lenAllowTime = destination.length +
                 source.length +
                 type.length +
                 appID.length +
@@ -208,7 +215,9 @@ public class GOOSE implements Runnable {
                 goosePdu.length +
                 goCBRef.length +
                 valueGoCBRef.length +
-                timeAllowedToLive.length +
+                timeAllowedToLive.length;
+
+        lenSq = lenAllowTime +
                 valueTimeAllowedToLive.length +
                 datSet.length +
                 valueDatSet.length +
@@ -218,7 +227,9 @@ public class GOOSE implements Runnable {
                 valueT.length +
                 stNum.length +
                 valueStNum.length +
-                sqNum.length +
+                sqNum.length;
+
+        lenData = lenSq +
                 valueSqNum.length +
                 simulation.length +
                 convertingToByte(valueSimulation).length +
@@ -231,7 +242,7 @@ public class GOOSE implements Runnable {
 
         dat.forEach(this::lengthValue);
 
-        lenGoose += allDate.length;
+        lenGoose += lenData + allDate.length;
 
         length[length.length - 1] = (byte) (lenGoose - destination.length - source.length - type.length);
 
@@ -247,34 +258,53 @@ public class GOOSE implements Runnable {
                 lenGoose += int32.length + valueInt32.length;
                 allDate[allDate.length - 1] += int32.length + valueInt32.length;
             }
+            case "Float" -> {
+                lenGoose += float32.length + valueFloat32.length;
+                allDate[allDate.length - 1] += float32.length + valueFloat32.length;
+            }
         }
     }
 
-
+    @SneakyThrows
     public void run() {
-        try {
-            sendHandle.sendPacket(packet);
-        } catch (PcapNativeException | NotOpenException e) {
-            e.printStackTrace();
-        }
+        sendHandle.sendPacket(packet);
         ses.schedule(this, time, TimeUnit.MILLISECONDS);
         increaseParam();
     }
 
+    @SneakyThrows
     private void increaseParam() {
-        valueSqNum = ByteBuffer.allocate(5).putInt(1, ++sq).array();
         time = Math.min(time * 2, delay);
+        valueSqNum = ByteBuffer.allocate(5).putInt(1, ++sq).array();
         valueTimeAllowedToLive = ByteBuffer.allocate(5)
-                .putInt(1, Math.min(time * 2, delay))
+                .putInt(1, (int) Math.min(time * 1.5, delay * 1.5))
                 .array();
-        this.createMessage();
+        packet = EthernetPacket.newPacket(buffer.put(lenAllowTime, valueTimeAllowedToLive)
+                .put(lenSq, valueSqNum).array(), 0, lenGoose);
     }
 
-    public byte[] convertingToByte(Boolean bool) {
+    private byte[] convertingToByte(Boolean bool) {
         if (bool) {
             return new byte[]{0x01};
         } else {
             return new byte[]{0x00};
         }
+    }
+
+    public void setData(DataSet newData) {
+        ses.shutdownNow();
+        dat = newData.getItems();
+        sq = 0;
+        time = 4;
+        valueT = ByteBuffer.allocate(8)
+                .putInt((int) (Instant.now().getEpochSecond()))
+                .putInt(Instant.now().getNano())
+                .array();
+        valueSqNum = ByteBuffer.allocate(5).putInt(1, sq).array();
+        valueTimeAllowedToLive = ByteBuffer.allocate(5)
+                .putInt(1, 6)
+                .array();
+        valueStNum = ByteBuffer.allocate(5).putInt(1, ++st).array();
+        this.createMessage();
     }
 }

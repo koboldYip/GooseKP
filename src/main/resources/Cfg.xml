@@ -1,12 +1,15 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <root>
         <senders>
-            <dataset datasetName="dataset1" iface="\Device\NPF_{7AF074C8-513D-4735-8FF3-3488258C0340}"
+            <dataset datasetName="dataset1" iface="\Device\NPF_{D598FB66-4825-4A42-89C2-9843446C5E56}"
                      macSource="0a:00:27:00:00:15" macDestination="0a:00:27:00:00:15" goCbRef="GOcbReference"
                      goID="GOcbReference">
                 <item type="Boolean" value="false"/>
                 <item type="Integer" value="666666"/>
+                <item type="Float" value="666.666"/>
             </dataset>
         </senders>
 </root>
 
+<!--        \Device\NPF_{C4FF6C30-3F26-4593-AA65-DCA4C087CD54}-->
+<!--        \Device\NPF_{D598FB66-4825-4A42-89C2-9843446C5E56}-->
