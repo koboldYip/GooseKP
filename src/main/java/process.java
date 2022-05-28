@@ -21,6 +21,15 @@ public class process {
                     value.getSenders().get(0).getDataset().getItems().get(2).setValue("6.6");
                     gse.setData(value.getSenders().get(0).getDataset());
                 }
-                , 10000, TimeUnit.MILLISECONDS);
+                , 10, TimeUnit.SECONDS);
+
+        Executors.newSingleThreadScheduledExecutor().schedule(
+                () -> {
+                    value.getSenders().get(0).getDataset().getItems().get(0).setValue("true");
+                    value.getSenders().get(0).getDataset().getItems().get(1).setValue("7");
+                    value.getSenders().get(0).getDataset().getItems().get(2).setValue("7.7");
+                    gse.setData(value.getSenders().get(0).getDataset());
+                }
+                , 20, TimeUnit.SECONDS);
     }
 }

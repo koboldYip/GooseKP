@@ -1,8 +1,6 @@
 import lombok.Data;
 import lombok.SneakyThrows;
-import org.pcap4j.core.PcapHandle;
-import org.pcap4j.core.PcapNetworkInterface;
-import org.pcap4j.core.Pcaps;
+import org.pcap4j.core.*;
 import org.pcap4j.packet.EthernetPacket;
 
 import java.nio.ByteBuffer;
@@ -12,10 +10,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 @Data
-public class GOOSE implements Runnable {
+public class GOOSE {
 
     private byte[] destination = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
     private byte[] source = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
@@ -82,6 +81,8 @@ public class GOOSE implements Runnable {
 
     private List<PcapNetworkInterface> ifs;
     private ScheduledExecutorService ses;
+    private ScheduledFuture future;
+    private Runnable runnable;
     private PcapHandle sendHandle;
     private EthernetPacket packet;
     private byte[] pack;
@@ -105,6 +106,18 @@ public class GOOSE implements Runnable {
 
     @SneakyThrows
     private void createMessage() {
+
+        runnable = () -> {
+            future = ses.schedule(runnable, time, TimeUnit.MILLISECONDS);
+            increaseParam();
+            try {
+                sendHandle.sendPacket(packet);
+                valueSqNum = ByteBuffer.allocate(5).putInt(1, ++sq).array();
+            } catch (PcapNativeException | NotOpenException e) {
+                e.printStackTrace();
+            }
+        };
+
         buffer = ByteBuffer.allocate(lenGoose);
 
         buffer.put(destination)
@@ -141,7 +154,11 @@ public class GOOSE implements Runnable {
         dat.forEach(this::typeValue);
         ses = Executors.newSingleThreadScheduledExecutor();
         packet = EthernetPacket.newPacket(buffer.array(), 0, lenGoose);
-        run();
+
+        sendHandle.sendPacket(packet);
+        valueSqNum = ByteBuffer.allocate(5).putInt(1, ++sq).array();
+
+        runnable.run();
     }
 
     private void typeValue(Item e) {
@@ -199,7 +216,6 @@ public class GOOSE implements Runnable {
 
         valueNumDatSetEntries = new byte[]{0x00, 0x00, 0x00, 0x00, 0x00};
 
-        dat.clear();
         dat = dataSet.getItems();
 
         valueNumDatSetEntries = ByteBuffer.allocate(5).putInt(1, dat.size()).array();
@@ -266,16 +282,8 @@ public class GOOSE implements Runnable {
     }
 
     @SneakyThrows
-    public void run() {
-        sendHandle.sendPacket(packet);
-        ses.schedule(this, time, TimeUnit.MILLISECONDS);
-        increaseParam();
-    }
-
-    @SneakyThrows
     private void increaseParam() {
         time = Math.min(time * 2, delay);
-        valueSqNum = ByteBuffer.allocate(5).putInt(1, ++sq).array();
         valueTimeAllowedToLive = ByteBuffer.allocate(5)
                 .putInt(1, (int) Math.min(time * 1.5, delay * 1.5))
                 .array();
@@ -292,6 +300,7 @@ public class GOOSE implements Runnable {
     }
 
     public void setData(DataSet newData) {
+        future.cancel(true);
         ses.shutdownNow();
         dat = newData.getItems();
         sq = 0;
