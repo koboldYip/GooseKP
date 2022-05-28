@@ -16,53 +16,53 @@ import java.util.concurrent.TimeUnit;
 @Data
 public class GOOSE {
 
-    private byte[] destination = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-    private byte[] source = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-    private final byte[] type = {(byte) 0x88, (byte) 0xB8};
+    private ByteBuffer destination = ByteBuffer.allocate(6);
+    private ByteBuffer source = ByteBuffer.allocate(6);
+    private ByteBuffer type = ByteBuffer.allocate(2).put(new byte[]{(byte) 0x88, (byte) 0xB8});
 
-    private final byte[] appID = {0x00, 0x01};
-    private final byte[] length = {0x00, 0x00};
-    private final byte[] reserved1 = {0x00, 0x00};
-    private final byte[] reserved2 = {0x00, 0x00};
-    private final byte[] goosePdu = {0x61, (byte) 0x81, (byte) 0x8A};
-    private byte[] timeAllowedToLive = {(byte) 0x81, 0x05};
-    private final byte[] t = {(byte) 0x84, 0x08};
-    private final byte[] stNum = {(byte) 0x85, 0x05};
-    private final byte[] sqNum = {(byte) 0x86, 0x05};
-    private final byte[] simulation = {(byte) 0x87, 0x01};
-    private final byte[] confRev = {(byte) 0x88, 0x05};
-    private final byte[] ndsCom = {(byte) 0x89, 0x01};
-    private final byte[] numDatSetEntries = {(byte) 0x8A, 0x05};
+    private ByteBuffer appID = ByteBuffer.allocate(2).put(new byte[]{0x00, 0x01});
+    private ByteBuffer length = ByteBuffer.allocate(2);
+    private ByteBuffer reserved1 = ByteBuffer.allocate(2).put(new byte[]{0x00, 0x00});
+    private ByteBuffer reserved2 = ByteBuffer.allocate(2).put(new byte[]{0x00, 0x00});
+    private ByteBuffer goosePdu = ByteBuffer.allocate(3).put(new byte[]{0x61, (byte) 0x81, (byte) 0x8A});
+    private ByteBuffer timeAllowedToLive = ByteBuffer.allocate(2).put(new byte[]{(byte) 0x81, 0x05});
+    private ByteBuffer t = ByteBuffer.allocate(2).put(new byte[]{(byte) 0x84, 0x08});
+    private ByteBuffer stNum = ByteBuffer.allocate(2).put(new byte[]{(byte) 0x85, 0x05});
+    private ByteBuffer sqNum = ByteBuffer.allocate(2).put(new byte[]{(byte) 0x86, 0x05});
+    private ByteBuffer simulation = ByteBuffer.allocate(2).put(new byte[]{(byte) 0x87, 0x01});
+    private ByteBuffer confRev = ByteBuffer.allocate(2).put(new byte[]{(byte) 0x88, 0x05});
+    private ByteBuffer ndsCom = ByteBuffer.allocate(2).put(new byte[]{(byte) 0x89, 0x01});
+    private ByteBuffer numDatSetEntries = ByteBuffer.allocate(2).put(new byte[]{(byte) 0x8A, 0x05});
 
-    private final byte[] bool = {(byte) 0x83, 0x01};
-    private final byte[] int32 = {(byte) 0x85, 0x05};
-    private final byte[] float32 = {(byte) 0x87, 0x05};
+    private ByteBuffer bool = ByteBuffer.allocate(2).put(new byte[]{(byte) 0x83, 0x01});
+    private ByteBuffer int32 = ByteBuffer.allocate(2).put(new byte[]{(byte) 0x85, 0x05});
+    private ByteBuffer float32 = ByteBuffer.allocate(2).put(new byte[]{(byte) 0x87, 0x05});
 
-    private final byte[] goCBRef = {(byte) 0x80, 0x00};
-    private final byte[] datSet = {(byte) 0x82, 0x00};
-    private final byte[] goID = {(byte) 0x83, 0x00};
+    private ByteBuffer goCBRef = ByteBuffer.allocate(2).put(new byte[]{(byte) 0x80});
+    private ByteBuffer datSet = ByteBuffer.allocate(2).put(new byte[]{(byte) 0x82});
+    private ByteBuffer goID = ByteBuffer.allocate(2).put(new byte[]{(byte) 0x83});
 
-    private final byte[] allDate = {(byte) 0xAB, 0x00};
+    private ByteBuffer allDate = ByteBuffer.allocate(2).put(new byte[]{(byte) 0xAB});
 
-    private byte[] valueGoCBRef;
-    private byte[] valueDatSet;
-    private byte[] valueGoID;
+    private ByteBuffer valueGoCBRef;
+    private ByteBuffer valueDatSet;
+    private ByteBuffer valueGoID;
 
-    private byte[] valueStNum = {0x00, 0x00, 0x00, 0x00, 0x00};
-    private byte[] valueSqNum = {0x00, 0x00, 0x00, 0x00, 0x00};
-    private boolean valueSimulation = false;
-    private byte[] valueConfRev = {0x00, 0x00, 0x00, 0x00, 0x00};
-    private boolean valueNdsCom = false;
+    private ByteBuffer valueStNum = ByteBuffer.allocate(5);
+    private ByteBuffer valueSqNum = ByteBuffer.allocate(5);
+    private ByteBuffer valueSimulation = ByteBuffer.allocate(1);
+    private ByteBuffer valueConfRev = ByteBuffer.allocate(5);
+    private ByteBuffer valueNdsCom = ByteBuffer.allocate(1);
 
-    private byte[] valueBool = {0x01};
-    private byte[] valueInt32 = {0x00, 0x00, 0x00, 0x00, 0x00};
-    private byte[] valueFloat32 = {0x00, 0x00, 0x00, 0x00, 0x00};
+    private ByteBuffer valueBool = ByteBuffer.allocate(1).put(new byte[]{0x00});
+    private ByteBuffer valueInt32 = ByteBuffer.allocate(5).put(new byte[]{0x00, 0x00, 0x00, 0x00, 0x00});
+    private ByteBuffer valueFloat32 = ByteBuffer.allocate(5).put(new byte[]{0x00, 0x00, 0x00, 0x00, 0x00});
 
-    private byte[] valueTimeAllowedToLive = {0x00, 0x00, 0x00, 0x00, 0x06};
-    private byte[] valueT = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-    private byte[] valueNumDatSetEntries = {0x00, 0x00, 0x00, 0x00, 0x00};
+    private ByteBuffer valueTimeAllowedToLive = ByteBuffer.allocate(5).put(new byte[]{0x00, 0x00, 0x00, 0x00, 0x06});
+    private ByteBuffer valueT = ByteBuffer.allocate(8);
+    private ByteBuffer valueNumDatSetEntries = ByteBuffer.allocate(5);
 
-    private int valueAllDate;
+    private ByteBuffer valueAllDate;
 
     private List<Item> dat = new ArrayList<>();
 
@@ -75,6 +75,7 @@ public class GOOSE {
     private int lenAllowTime;
     private int lenSq;
     private int lenData;
+    private int data;
     private int conf;
     private int sq;
     private int st;
@@ -112,7 +113,7 @@ public class GOOSE {
             increaseParam();
             try {
                 sendHandle.sendPacket(packet);
-                valueSqNum = ByteBuffer.allocate(5).putInt(1, ++sq).array();
+                valueSqNum = valueSqNum.putInt(1, ++sq);
             } catch (PcapNativeException | NotOpenException e) {
                 e.printStackTrace();
             }
@@ -122,54 +123,54 @@ public class GOOSE {
 
         buffer.put(destination)
                 .put(source)
-                .put(type)
-                .put(appID)
-                .put(length)
-                .put(reserved1)
-                .put(reserved2)
-                .put(goosePdu)
-                .put(goCBRef)
-                .put(valueGoCBRef)
-                .put(timeAllowedToLive)
-                .put(valueTimeAllowedToLive)
-                .put(datSet)
-                .put(valueDatSet)
-                .put(goID)
-                .put(valueGoID)
-                .put(t)
-                .put(valueT)
-                .put(stNum)
-                .put(valueStNum)
-                .put(sqNum)
-                .put(valueSqNum)
-                .put(simulation)
-                .put(convertingToByte(valueSimulation))
-                .put(confRev)
-                .put(valueConfRev)
-                .put(ndsCom)
-                .put(convertingToByte(valueNdsCom))
-                .put(numDatSetEntries)
-                .put(valueNumDatSetEntries)
-                .put(allDate);
+                .put(type.array())
+                .put(appID.array())
+                .put(length.array())
+                .put(reserved1.array())
+                .put(reserved2.array())
+                .put(goosePdu.array())
+                .put(goCBRef.array())
+                .put(valueGoCBRef.array())
+                .put(timeAllowedToLive.array())
+                .put(valueTimeAllowedToLive.array())
+                .put(datSet.array())
+                .put(valueDatSet.array())
+                .put(goID.array())
+                .put(valueGoID.array())
+                .put(t.array())
+                .put(valueT.array())
+                .put(stNum.array())
+                .put(valueStNum.array())
+                .put(sqNum.array())
+                .put(valueSqNum.array())
+                .put(simulation.array())
+                .put(valueSimulation.array())
+                .put(confRev.array())
+                .put(valueConfRev.array())
+                .put(ndsCom.array())
+                .put(valueNdsCom.array())
+                .put(numDatSetEntries.array())
+                .put(valueNumDatSetEntries.array())
+                .put(allDate.array());
         dat.forEach(this::typeValue);
         ses = Executors.newSingleThreadScheduledExecutor();
         packet = EthernetPacket.newPacket(buffer.array(), 0, lenGoose);
 
         sendHandle.sendPacket(packet);
-        valueSqNum = ByteBuffer.allocate(5).putInt(1, ++sq).array();
+        valueSqNum = valueSqNum.putInt(1, ++sq);
 
         runnable.run();
     }
 
     private void typeValue(Item e) {
         switch (e.getType()) {
-            case "Boolean" -> buffer.put(bool)
+            case "Boolean" -> buffer.put(bool.array())
                     .put(convertingToByte(Boolean.valueOf(e.getValue())));
 
-            case "Integer" -> buffer.put(int32)
+            case "Integer" -> buffer.put(int32.array())
                     .put(ByteBuffer.allocate(5).putInt(1, Integer.parseInt(e.getValue())).array());
 
-            case "Float" -> buffer.put(float32)
+            case "Float" -> buffer.put(float32.array())
                     .put(ByteBuffer.allocate(5).put(new byte[]{0x08})
                             .putFloat(Float.parseFloat(e.getValue())).array());
 
@@ -178,105 +179,98 @@ public class GOOSE {
 
     private void createHeader(DataSet dataSet) {
 
-        valueT = new byte[]{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-        valueSqNum = new byte[]{0x00, 0x00, 0x00, 0x00, 0x00};
-        valueConfRev = new byte[]{0x00, 0x00, 0x00, 0x00, 0x00};
-        valueStNum = new byte[]{0x00, 0x00, 0x00, 0x00, 0x00};
         conf = 0;
         st = 0;
         sq = 0;
         st++;
         conf++;
-        valueConfRev = ByteBuffer.allocate(5).putInt(1, conf).array();
-        valueStNum = ByteBuffer.allocate(5).putInt(1, st).array();
-        valueDatSet = dataSet.getDatasetName().getBytes(StandardCharsets.UTF_8);
+        valueConfRev = valueConfRev.putInt(1, conf);
+        valueStNum = valueStNum.putInt(1, st);
+        valueDatSet = ByteBuffer.wrap(dataSet.getDatasetName().getBytes(StandardCharsets.UTF_8));
 
-        valueT = ByteBuffer.allocate(8)
-                .putInt((int) (Instant.now().getEpochSecond()))
-                .putInt(Instant.now().getNano())
-                .array();
+        valueT = valueT
+                .putInt(1, (int) (Instant.now().getEpochSecond()))
+                .putInt(2, Instant.now().getNano());
 
-        for (int i = 0; i < destination.length; i++) {
-            destination[i] = (byte) Integer.parseInt(dataSet.getMacDestination().split(":")[i], 16);
+        for (int i = 0; i < 6; i++) {
+            destination.put(i, (byte) Integer.parseInt(dataSet.getMacDestination().split(":")[i], 16));
         }
-        for (int i = 0; i < source.length; i++) {
-            source[i] = (byte) Integer.parseInt(dataSet.getMacSource().split(":")[i], 16);
+        for (int i = 0; i < 6; i++) {
+            source.put(i, (byte) Integer.parseInt(dataSet.getMacSource().split(":")[i], 16));
         }
 
-        valueGoCBRef = dataSet.getGoCbRef().getBytes(StandardCharsets.UTF_8);
-        valueGoID = dataSet.getGoID().getBytes(StandardCharsets.UTF_8);
+        valueGoCBRef = ByteBuffer.wrap(dataSet.getGoCbRef().getBytes(StandardCharsets.UTF_8));
+        valueGoID = ByteBuffer.wrap(dataSet.getGoID().getBytes(StandardCharsets.UTF_8));
 
-        datSet[datSet.length - 1] = (byte) valueDatSet.length;
-        goCBRef[goCBRef.length - 1] = (byte) valueGoCBRef.length;
-        goID[goID.length - 1] = (byte) valueGoID.length;
+        datSet.put( (byte) valueDatSet.array().length);
+        goCBRef.put( (byte) valueGoCBRef.array().length);
+        goID.put( (byte) valueGoID.array().length);
 
     }
 
     private void createData(DataSet dataSet) {
 
-        valueNumDatSetEntries = new byte[]{0x00, 0x00, 0x00, 0x00, 0x00};
-
         dat = dataSet.getItems();
 
-        valueNumDatSetEntries = ByteBuffer.allocate(5).putInt(1, dat.size()).array();
-        valueAllDate = (byte) dat.size();
+        valueNumDatSetEntries = valueNumDatSetEntries.putInt(1, dat.size());
 
-        lenAllowTime = destination.length +
-                source.length +
-                type.length +
-                appID.length +
-                length.length +
-                reserved1.length +
-                reserved2.length +
-                goosePdu.length +
-                goCBRef.length +
-                valueGoCBRef.length +
-                timeAllowedToLive.length;
+        lenAllowTime = destination.array().length +
+                source.array().length +
+                type.array().length +
+                appID.array().length +
+                length.array().length +
+                reserved1.array().length +
+                reserved2.array().length +
+                goosePdu.array().length +
+                goCBRef.array().length +
+                valueGoCBRef.array().length +
+                timeAllowedToLive.array().length;
 
         lenSq = lenAllowTime +
-                valueTimeAllowedToLive.length +
-                datSet.length +
-                valueDatSet.length +
-                goID.length +
-                valueGoID.length +
-                t.length +
-                valueT.length +
-                stNum.length +
-                valueStNum.length +
-                sqNum.length;
+                valueTimeAllowedToLive.array().length +
+                datSet.array().length +
+                valueDatSet.array().length +
+                goID.array().length +
+                valueGoID.array().length +
+                t.array().length +
+                valueT.array().length +
+                stNum.array().length +
+                valueStNum.array().length +
+                sqNum.array().length;
 
         lenData = lenSq +
-                valueSqNum.length +
-                simulation.length +
-                convertingToByte(valueSimulation).length +
-                confRev.length +
-                valueConfRev.length +
-                ndsCom.length +
-                convertingToByte(valueNdsCom).length +
-                numDatSetEntries.length +
-                valueNumDatSetEntries.length;
+                valueSqNum.array().length +
+                simulation.array().length +
+                valueSimulation.array().length +
+                confRev.array().length +
+                valueConfRev.array().length +
+                ndsCom.array().length +
+                valueNdsCom.array().length +
+                numDatSetEntries.array().length +
+                valueNumDatSetEntries.array().length;
 
         dat.forEach(this::lengthValue);
+        allDate.put((byte) data);
 
-        lenGoose += lenData + allDate.length;
+        lenGoose += lenData + data;
 
-        length[length.length - 1] = (byte) (lenGoose - destination.length - source.length - type.length);
+        length.put((byte) (lenGoose - destination.array().length - source.array().length - type.array().length));
 
     }
 
     private void lengthValue(Item e) {
         switch (e.getType()) {
             case "Boolean" -> {
-                lenGoose += bool.length + valueBool.length;
-                allDate[allDate.length - 1] += bool.length + valueBool.length;
+                lenGoose += bool.array().length + valueBool.array().length;
+                data += bool.array().length + valueBool.array().length;
             }
             case "Integer" -> {
-                lenGoose += int32.length + valueInt32.length;
-                allDate[allDate.length - 1] += int32.length + valueInt32.length;
+                lenGoose += int32.array().length + valueInt32.array().length;
+                data += int32.array().length + valueInt32.array().length;
             }
             case "Float" -> {
-                lenGoose += float32.length + valueFloat32.length;
-                allDate[allDate.length - 1] += float32.length + valueFloat32.length;
+                lenGoose += float32.array().length + valueFloat32.array().length;
+                data += float32.array().length + valueFloat32.array().length;
             }
         }
     }
@@ -284,11 +278,10 @@ public class GOOSE {
     @SneakyThrows
     private void increaseParam() {
         time = Math.min(time * 2, delay);
-        valueTimeAllowedToLive = ByteBuffer.allocate(5)
-                .putInt(1, (int) Math.min(time * 1.5, delay * 1.5))
-                .array();
-        packet = EthernetPacket.newPacket(buffer.put(lenAllowTime, valueTimeAllowedToLive)
-                .put(lenSq, valueSqNum).array(), 0, lenGoose);
+        valueTimeAllowedToLive = valueTimeAllowedToLive
+                .putInt(1, (int) Math.min(time * 1.5, delay * 1.5));
+        packet = EthernetPacket.newPacket(buffer.put(lenAllowTime, valueTimeAllowedToLive.array())
+                .put(lenSq, valueSqNum.array()).array(), 0, lenGoose);
     }
 
     private byte[] convertingToByte(Boolean bool) {
@@ -305,15 +298,13 @@ public class GOOSE {
         dat = newData.getItems();
         sq = 0;
         time = 4;
-        valueT = ByteBuffer.allocate(8)
+        valueT = valueT
                 .putInt((int) (Instant.now().getEpochSecond()))
-                .putInt(Instant.now().getNano())
-                .array();
-        valueSqNum = ByteBuffer.allocate(5).putInt(1, sq).array();
-        valueTimeAllowedToLive = ByteBuffer.allocate(5)
-                .putInt(1, 6)
-                .array();
-        valueStNum = ByteBuffer.allocate(5).putInt(1, ++st).array();
+                .putInt(Instant.now().getNano());
+        valueSqNum = valueSqNum.putInt(1, sq);
+        valueTimeAllowedToLive = valueTimeAllowedToLive
+                .putInt(1, 6);
+        valueStNum = valueStNum.putInt(1, ++st);
         this.createMessage();
     }
 }
