@@ -54,9 +54,9 @@ public class GOOSE {
     private ByteBuffer valueConfRev = ByteBuffer.allocate(5);
     private ByteBuffer valueNdsCom = ByteBuffer.allocate(1);
 
-    private ByteBuffer valueBool = ByteBuffer.allocate(1).put(new byte[]{0x00});
-    private ByteBuffer valueInt32 = ByteBuffer.allocate(5).put(new byte[]{0x00, 0x00, 0x00, 0x00, 0x00});
-    private ByteBuffer valueFloat32 = ByteBuffer.allocate(5).put(new byte[]{0x00, 0x00, 0x00, 0x00, 0x00});
+    private ByteBuffer valueBool = ByteBuffer.allocate(1);
+    private ByteBuffer valueInt32 = ByteBuffer.allocate(5);
+    private ByteBuffer valueFloat32 = ByteBuffer.allocate(5);
 
     private ByteBuffer valueTimeAllowedToLive = ByteBuffer.allocate(5).put(new byte[]{0x00, 0x00, 0x00, 0x00, 0x06});
     private ByteBuffer valueT = ByteBuffer.allocate(8);
@@ -167,12 +167,12 @@ public class GOOSE {
             case "Boolean" -> buffer.put(bool.array())
                     .put(convertingToByte(Boolean.valueOf(e.getValue())));
 
-            case "Integer" -> buffer.put(int32.array())
-                    .put(ByteBuffer.allocate(5).putInt(1, Integer.parseInt(e.getValue())).array());
+            case "Integer" -> buffer.put(int32.array()).put(new byte[]{0x00})
+                    .putInt(Integer.parseInt(e.getValue()));
 
             case "Float" -> buffer.put(float32.array())
-                    .put(ByteBuffer.allocate(5).put(new byte[]{0x08})
-                            .putFloat(Float.parseFloat(e.getValue())).array());
+                    .put(new byte[]{0x08})
+                    .putFloat(Float.parseFloat(e.getValue()));
 
         }
     }
@@ -189,8 +189,8 @@ public class GOOSE {
         valueDatSet = ByteBuffer.wrap(dataSet.getDatasetName().getBytes(StandardCharsets.UTF_8));
 
         valueT = valueT
-                .putInt(1, (int) (Instant.now().getEpochSecond()))
-                .putInt(2, Instant.now().getNano());
+                .putInt((int) (Instant.now().getEpochSecond()))
+                .putInt(Instant.now().getNano());
 
         for (int i = 0; i < 6; i++) {
             destination.put(i, (byte) Integer.parseInt(dataSet.getMacDestination().split(":")[i], 16));
@@ -202,9 +202,9 @@ public class GOOSE {
         valueGoCBRef = ByteBuffer.wrap(dataSet.getGoCbRef().getBytes(StandardCharsets.UTF_8));
         valueGoID = ByteBuffer.wrap(dataSet.getGoID().getBytes(StandardCharsets.UTF_8));
 
-        datSet.put( (byte) valueDatSet.array().length);
-        goCBRef.put( (byte) valueGoCBRef.array().length);
-        goID.put( (byte) valueGoID.array().length);
+        datSet.put((byte) valueDatSet.array().length);
+        goCBRef.put((byte) valueGoCBRef.array().length);
+        goID.put((byte) valueGoID.array().length);
 
     }
 
@@ -254,7 +254,7 @@ public class GOOSE {
 
         lenGoose += lenData + data;
 
-        length.put((byte) (lenGoose - destination.array().length - source.array().length - type.array().length));
+        length.putShort((short) (lenGoose - destination.array().length - source.array().length - type.array().length));
 
     }
 
@@ -299,8 +299,8 @@ public class GOOSE {
         sq = 0;
         time = 4;
         valueT = valueT
-                .putInt((int) (Instant.now().getEpochSecond()))
-                .putInt(Instant.now().getNano());
+                .putInt(1, (int) (Instant.now().getEpochSecond()))
+                .putInt(1, Instant.now().getNano());
         valueSqNum = valueSqNum.putInt(1, sq);
         valueTimeAllowedToLive = valueTimeAllowedToLive
                 .putInt(1, 6);
