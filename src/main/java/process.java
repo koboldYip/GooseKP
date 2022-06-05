@@ -22,7 +22,7 @@ public class process {
                     value.getSenders().get(0).getDataset().getItems().get(2).setValue("14.2");
                     sender.changeGoose(gse);
                 }
-                , 10000, TimeUnit.MILLISECONDS);
+                , 10, TimeUnit.SECONDS);
 
         sender.sender();
 
