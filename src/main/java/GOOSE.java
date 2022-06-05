@@ -7,7 +7,6 @@ import org.pcap4j.packet.IllegalRawDataException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 
 @Data
@@ -55,7 +54,6 @@ public class GOOSE {
     private ByteBuffer valueT = ByteBuffer.allocate(8);
     private byte[] valueNumDatSetEntries;
 
-    private List<Item> dat = new ArrayList<>();
     private DataSet dataSet;
 
     private ByteBuffer buffer;
@@ -154,7 +152,7 @@ public class GOOSE {
                 .put(valueNumDatSetEntries)
                 .put(allDate);
 
-        dat.forEach(this::typeValue);
+        dataSet.getItems().forEach(this::typeValue);
 
         buffer.put(headerBuffer.array())
                 .put(dataBuffer.array());
@@ -211,9 +209,7 @@ public class GOOSE {
     }
 
     private void createData(DataSet dataSet) {
-        dat = dataSet.getItems();
-
-        valueNumDatSetEntries = ByteBuffer.allocate(5).putInt(1, dat.size()).array();
+        valueNumDatSetEntries = ByteBuffer.allocate(5).putInt(1, dataSet.getItems().size()).array();
 
         lenAllowTime = destination.length +
                 source.length +
@@ -255,7 +251,7 @@ public class GOOSE {
                 valueNumDatSetEntries.length +
                 allDate.length;
 
-        dat.forEach(this::lengthValue);
+        dataSet.getItems().forEach(this::lengthValue);
 
         dataBuffer = ByteBuffer.allocate(lenGoose);
         headerBuffer = ByteBuffer.allocate(lenData);
@@ -295,7 +291,6 @@ public class GOOSE {
 
     @SneakyThrows
     public void setData() {
-        dat = this.dataSet.getItems();
         sq = 0;
 
         valueT = valueT.clear()
@@ -311,7 +306,7 @@ public class GOOSE {
         headerBuffer.put(lenT, valueT.array());
 
         dataBuffer.clear();
-        dat.forEach(this::typeValue);
+        dataSet.getItems().forEach(this::typeValue);
 
         buffer.clear();
         buffer.put(headerBuffer.array())
