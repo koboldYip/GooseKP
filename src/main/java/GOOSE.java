@@ -2,16 +2,13 @@ import lombok.Data;
 import lombok.SneakyThrows;
 import org.pcap4j.core.*;
 import org.pcap4j.packet.EthernetPacket;
+import org.pcap4j.packet.IllegalRawDataException;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
 
 @Data
 public class GOOSE {
@@ -25,7 +22,10 @@ public class GOOSE {
     private final byte[] reserved1 = {0x00, 0x00};
     private final byte[] reserved2 = {0x00, 0x00};
     private final byte[] goosePdu = {0x61, (byte) 0x81, (byte) 0x8A};
+    private final byte[] goCBRef = {(byte) 0x80, 0x00};
     private byte[] timeAllowedToLive = {(byte) 0x81, 0x05};
+    private final byte[] datSet = {(byte) 0x82, 0x00};
+    private final byte[] goID = {(byte) 0x83, 0x00};
     private final byte[] t = {(byte) 0x84, 0x08};
     private final byte[] stNum = {(byte) 0x85, 0x05};
     private final byte[] sqNum = {(byte) 0x86, 0x05};
@@ -33,62 +33,77 @@ public class GOOSE {
     private final byte[] confRev = {(byte) 0x88, 0x05};
     private final byte[] ndsCom = {(byte) 0x89, 0x01};
     private final byte[] numDatSetEntries = {(byte) 0x8A, 0x05};
+    private final byte[] allDate = {(byte) 0xAB, 0x00};
 
     private final byte[] bool = {(byte) 0x83, 0x01};
     private final byte[] int32 = {(byte) 0x85, 0x05};
     private final byte[] float32 = {(byte) 0x87, 0x05};
 
-    private final byte[] goCBRef = {(byte) 0x80, 0x00};
-    private final byte[] datSet = {(byte) 0x82, 0x00};
-    private final byte[] goID = {(byte) 0x83, 0x00};
-
-    private final byte[] allDate = {(byte) 0xAB, 0x00};
-
     private byte[] valueGoCBRef;
     private byte[] valueDatSet;
     private byte[] valueGoID;
-
     private ByteBuffer valueStNum = ByteBuffer.allocate(5);
     private ByteBuffer valueSqNum = ByteBuffer.allocate(5);
     private boolean valueSimulation = false;
     private byte[] valueConfRev = {0x00, 0x00, 0x00, 0x00, 0x00};
     private boolean valueNdsCom = false;
-
     private byte[] valueBool = {0x01};
     private byte[] valueInt32 = {0x00, 0x00, 0x00, 0x00, 0x00};
     private byte[] valueFloat32 = {0x00, 0x00, 0x00, 0x00, 0x00};
 
     private ByteBuffer valueTimeAllowedToLive = ByteBuffer.allocate(5).put(new byte[]{0x00, 0x00, 0x00, 0x00, 0x06});
     private ByteBuffer valueT = ByteBuffer.allocate(8);
-    private byte[] valueNumDatSetEntries = {0x00, 0x00, 0x00, 0x00, 0x00};
-
-    private int valueAllDate;
+    private byte[] valueNumDatSetEntries;
 
     private List<Item> dat = new ArrayList<>();
+    private DataSet dataSet;
 
     private ByteBuffer buffer;
+    private ByteBuffer headerBuffer;
+    private ByteBuffer dataBuffer;
 
-    private int time = 4;
+    private int time = 2;
     private int delay = 2000;
 
     private int lenGoose;
     private int lenAllowTime;
     private int lenSq;
     private int lenData;
+    private int lenT;
+    private int lenSt;
+
     private int conf;
     private int sq;
     private int st;
+    private long startTime;
+    private long previousTime;
 
     private List<PcapNetworkInterface> ifs;
-    private ScheduledExecutorService ses;
-    private ScheduledFuture future;
     private Runnable runnable;
     private PcapHandle sendHandle;
     private EthernetPacket packet;
-    private byte[] pack;
+
+    {
+        runnable = () -> {
+            try {
+                sendHandle.sendPacket(packet);
+                increaseAnotherOneGoose();
+            } catch (PcapNativeException | NotOpenException | IllegalRawDataException e) {
+                e.printStackTrace();
+            }
+        };
+    }
+
+    private void increaseAnotherOneGoose() throws IllegalRawDataException {
+        valueSqNum = valueSqNum.putInt(1, ++sq);
+        valueTimeAllowedToLive = valueTimeAllowedToLive
+                .putInt(1, Math.min(time * 6, delay + delay / 2));
+        packet = EthernetPacket.newPacket(buffer.put(lenAllowTime, valueTimeAllowedToLive.array())
+                .put(lenSq, valueSqNum.array()).array(), 0, lenGoose);
+    }
 
     @SneakyThrows
-    public void createGOOSE(DataSet dataSet) {
+    public GOOSE(DataSet dataSet) {
         ifs = Pcaps.findAllDevs();
         PcapNetworkInterface activeInterface = null;
         for (PcapNetworkInterface pcapIface : ifs) {
@@ -99,6 +114,7 @@ public class GOOSE {
         }
         assert activeInterface != null;
         sendHandle = activeInterface.openLive(65536, PcapNetworkInterface.PromiscuousMode.PROMISCUOUS, 50);
+        this.dataSet = dataSet;
         createHeader(dataSet);
         createData(dataSet);
         createMessage();
@@ -106,21 +122,7 @@ public class GOOSE {
 
     @SneakyThrows
     private void createMessage() {
-
-        runnable = () -> {
-            future = ses.schedule(runnable, time, TimeUnit.MILLISECONDS);
-            increaseParam();
-            try {
-                sendHandle.sendPacket(packet);
-                valueSqNum = valueSqNum.putInt(1, ++sq);
-            } catch (PcapNativeException | NotOpenException e) {
-                e.printStackTrace();
-            }
-        };
-
-        buffer = ByteBuffer.allocate(lenGoose);
-
-        buffer.put(destination)
+        headerBuffer.put(destination)
                 .put(source)
                 .put(type)
                 .put(appID)
@@ -151,41 +153,39 @@ public class GOOSE {
                 .put(numDatSetEntries)
                 .put(valueNumDatSetEntries)
                 .put(allDate);
+
         dat.forEach(this::typeValue);
-        ses = Executors.newSingleThreadScheduledExecutor();
+
+        buffer.put(headerBuffer.array())
+                .put(dataBuffer.array());
+
         packet = EthernetPacket.newPacket(buffer.array(), 0, lenGoose);
 
-        sendHandle.sendPacket(packet);
-        valueSqNum = valueSqNum.putInt(1, ++sq);
-        increaseParam();
-        sendHandle.sendPacket(packet);
-        valueSqNum = valueSqNum.putInt(1, ++sq);
+        time = 2;
 
-        runnable.run();
     }
 
     private void typeValue(Item e) {
         switch (e.getType()) {
-            case "Boolean" -> buffer.put(bool)
+            case "Boolean" -> dataBuffer.put(bool)
                     .put(convertingToByte(Boolean.valueOf(e.getValue())));
 
-            case "Integer" -> buffer.put(int32).put(new byte[]{0x00})
+            case "Integer" -> dataBuffer.put(int32)
+                    .put(new byte[]{0x00})
                     .putInt(Integer.parseInt(e.getValue()));
 
-            case "Float" -> buffer.put(float32)
-                    .put(ByteBuffer.allocate(5).put(new byte[]{0x08})
-                            .putFloat(Float.parseFloat(e.getValue())).array());
+            case "Float" -> dataBuffer.put(float32)
+                    .put(new byte[]{0x08})
+                    .putFloat(Float.parseFloat(e.getValue()));
 
         }
     }
 
     private void createHeader(DataSet dataSet) {
-
-        conf = 0;
-        st = 0;
         sq = 0;
-        st++;
-        conf++;
+        st = 1;
+        conf = 1;
+
         valueConfRev = ByteBuffer.allocate(5).putInt(1, conf).array();
         valueStNum = valueStNum.putInt(1, st);
         valueDatSet = dataSet.getDatasetName().getBytes(StandardCharsets.UTF_8);
@@ -211,13 +211,9 @@ public class GOOSE {
     }
 
     private void createData(DataSet dataSet) {
-
-        valueNumDatSetEntries = new byte[]{0x00, 0x00, 0x00, 0x00, 0x00};
-
         dat = dataSet.getItems();
 
         valueNumDatSetEntries = ByteBuffer.allocate(5).putInt(1, dat.size()).array();
-        valueAllDate = (byte) dat.size();
 
         lenAllowTime = destination.length +
                 source.length +
@@ -231,15 +227,19 @@ public class GOOSE {
                 valueGoCBRef.length +
                 timeAllowedToLive.length;
 
-        lenSq = lenAllowTime +
+        lenT = lenAllowTime +
                 valueTimeAllowedToLive.array().length +
                 datSet.length +
                 valueDatSet.length +
                 goID.length +
                 valueGoID.length +
-                t.length +
+                t.length;
+
+        lenSt = lenT +
                 valueT.array().length +
-                stNum.length +
+                stNum.length;
+
+        lenSq = lenSt +
                 valueStNum.array().length +
                 sqNum.length;
 
@@ -252,11 +252,17 @@ public class GOOSE {
                 ndsCom.length +
                 convertingToByte(valueNdsCom).length +
                 numDatSetEntries.length +
-                valueNumDatSetEntries.length;
+                valueNumDatSetEntries.length +
+                allDate.length;
 
         dat.forEach(this::lengthValue);
 
-        lenGoose += lenData + allDate.length;
+        dataBuffer = ByteBuffer.allocate(lenGoose);
+        headerBuffer = ByteBuffer.allocate(lenData);
+
+        lenGoose += lenData;
+
+        buffer = ByteBuffer.allocate(lenGoose);
 
         length[length.length - 1] = (byte) (lenGoose - destination.length - source.length - type.length);
 
@@ -279,15 +285,6 @@ public class GOOSE {
         }
     }
 
-    @SneakyThrows
-    private void increaseParam() {
-        time = Math.min(time * 2, delay);
-        valueTimeAllowedToLive = valueTimeAllowedToLive
-                .putInt(1, (int) Math.min(time * 1.5, delay * 1.5));
-        packet = EthernetPacket.newPacket(buffer.put(lenAllowTime, valueTimeAllowedToLive.array())
-                .put(lenSq, valueSqNum.array()).array(), 0, lenGoose);
-    }
-
     private byte[] convertingToByte(Boolean bool) {
         if (bool) {
             return new byte[]{0x01};
@@ -296,19 +293,41 @@ public class GOOSE {
         }
     }
 
-    public void setData(DataSet newData) {
-        future.cancel(true);
-        ses.shutdownNow();
-        dat = newData.getItems();
+    @SneakyThrows
+    public void setData() {
+        dat = this.dataSet.getItems();
         sq = 0;
-        time = 4;
+
         valueT = valueT.clear()
                 .putInt((int) (Instant.now().getEpochSecond()))
                 .putInt(Instant.now().getNano());
-        valueSqNum = valueSqNum.clear().putInt(1, sq);
-        valueTimeAllowedToLive = valueTimeAllowedToLive.clear()
+        valueSqNum = valueSqNum.putInt(1, sq);
+        valueTimeAllowedToLive = valueTimeAllowedToLive
                 .putInt(1, 6);
         valueStNum = valueStNum.putInt(1, ++st);
-        this.createMessage();
+
+        headerBuffer.put(lenAllowTime, valueTimeAllowedToLive.array());
+        headerBuffer.put(lenSq, valueSqNum.array());
+        headerBuffer.put(lenT, valueT.array());
+
+        dataBuffer.clear();
+        dat.forEach(this::typeValue);
+
+        buffer.clear();
+        buffer.put(headerBuffer.array())
+                .put(dataBuffer.array());
+
+        packet = EthernetPacket.newPacket(buffer.array(), 0, lenGoose);
+        time = 2;
+    }
+
+
+    public void send() {
+        startTime = System.nanoTime();
+        if (startTime - previousTime >= time * 1000000L) {
+            runnable.run();
+            time = Math.min(time * 2, delay);
+            previousTime = startTime;
+        }
     }
 }

@@ -11,25 +11,20 @@ public class process {
     public static void main(String[] args) {
         XmlMapper xmlMapper = new XmlMapper();
         Root value = xmlMapper.readValue(new File("src/main/resources/Cfg.xml"), Root.class);
-        GOOSE gse = new GOOSE();
-        gse.createGOOSE(value.getSenders().get(0).getDataset());
+        Sender sender = new Sender();
+        GOOSE gse = new GOOSE(value.getSenders().get(0).getDataset());
+        sender.getGooseList().add(gse);
 
         Executors.newSingleThreadScheduledExecutor().schedule(
                 () -> {
                     value.getSenders().get(0).getDataset().getItems().get(0).setValue("true");
-                    value.getSenders().get(0).getDataset().getItems().get(1).setValue("6");
-                    value.getSenders().get(0).getDataset().getItems().get(2).setValue("6.6");
-                    gse.setData(value.getSenders().get(0).getDataset());
+                    value.getSenders().get(0).getDataset().getItems().get(1).setValue("228");
+                    value.getSenders().get(0).getDataset().getItems().get(2).setValue("14.2");
+                    sender.changeGoose(gse);
                 }
-                , 10, TimeUnit.SECONDS);
+                , 10000, TimeUnit.MILLISECONDS);
 
-        Executors.newSingleThreadScheduledExecutor().schedule(
-                () -> {
-                    value.getSenders().get(0).getDataset().getItems().get(0).setValue("true");
-                    value.getSenders().get(0).getDataset().getItems().get(1).setValue("7");
-                    value.getSenders().get(0).getDataset().getItems().get(2).setValue("7.7");
-                    gse.setData(value.getSenders().get(0).getDataset());
-                }
-                , 20, TimeUnit.SECONDS);
+        sender.sender();
+
     }
 }
