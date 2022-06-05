@@ -158,9 +158,6 @@ public class GOOSE {
                 .put(dataBuffer.array());
 
         packet = EthernetPacket.newPacket(buffer.array(), 0, lenGoose);
-
-        time = 2;
-
     }
 
     private void typeValue(Item e) {
@@ -205,7 +202,6 @@ public class GOOSE {
         datSet[datSet.length - 1] = (byte) valueDatSet.length;
         goCBRef[goCBRef.length - 1] = (byte) valueGoCBRef.length;
         goID[goID.length - 1] = (byte) valueGoID.length;
-
     }
 
     private void createData(DataSet dataSet) {
