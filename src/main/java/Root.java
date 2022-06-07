@@ -8,7 +8,7 @@ import java.util.List;
 @JacksonXmlRootElement
 public class Root {
 
-    @JacksonXmlElementWrapper(useWrapping = false)
-    private List<Sender> senders;
+    @JacksonXmlElementWrapper
+    private List<DataSet> senders;
 
 }
