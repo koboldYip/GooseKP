@@ -105,7 +105,8 @@ public class GOOSE implements Runnable {
             }
         }
         assert activeInterface != null;
-        sendHandle = activeInterface.openLive(65536, PcapNetworkInterface.PromiscuousMode.PROMISCUOUS, 50);
+        sendHandle = activeInterface.openLive(65536,
+                PcapNetworkInterface.PromiscuousMode.PROMISCUOUS, 50);
         this.dataSet = dataSet;
         createHeader(dataSet);
         createData(dataSet);
@@ -141,11 +142,11 @@ public class GOOSE implements Runnable {
                 .put(sqNum)
                 .put(valueSqNum.array())
                 .put(simulation)
-                .put(convertingToByte(valueSimulation))
+                .put(booleanToByte(valueSimulation))
                 .put(confRev)
                 .put(valueConfRev)
                 .put(ndsCom)
-                .put(convertingToByte(valueNdsCom))
+                .put(booleanToByte(valueNdsCom))
                 .put(numDatSetEntries)
                 .put(valueNumDatSetEntries)
                 .put(allDate);
@@ -161,7 +162,7 @@ public class GOOSE implements Runnable {
     private void typeValue(Item e) {
         switch (e.getType()) {
             case "Boolean" -> dataBuffer.put(bool)
-                    .put(convertingToByte(Boolean.valueOf(e.getValue())));
+                    .put(booleanToByte(Boolean.valueOf(e.getValue())));
 
             case "Integer" -> dataBuffer.put(int32)
                     .put(new byte[]{0x00})
@@ -228,11 +229,11 @@ public class GOOSE implements Runnable {
         lenData = lenSq +
                 valueSqNum.array().length +
                 simulation.length +
-                convertingToByte(valueSimulation).length +
+                booleanToByte(valueSimulation).length +
                 confRev.length +
                 valueConfRev.array().length +
                 ndsCom.length +
-                convertingToByte(valueNdsCom).length +
+                booleanToByte(valueNdsCom).length +
                 numDatSetEntries.length +
                 valueNumDatSetEntries.array().length +
                 allDate.length;
@@ -266,7 +267,7 @@ public class GOOSE implements Runnable {
         }
     }
 
-    private byte[] convertingToByte(Boolean bool) {
+    private byte[] booleanToByte(Boolean bool) {
         if (bool) {
             return new byte[]{0x01};
         } else {
