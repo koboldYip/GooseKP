@@ -10,7 +10,9 @@ public class ControlBlock {
 
     public void sender() {
         while (!gooseList.isEmpty()) {
-            gooseList.parallelStream().forEach(GOOSE::send);
+            gooseList.stream()
+                    .filter(GOOSE::isUnPaused)
+                    .forEach(GOOSE::send);
         }
     }
 
