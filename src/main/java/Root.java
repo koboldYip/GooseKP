@@ -9,6 +9,6 @@ import java.util.List;
 public class Root {
 
     @JacksonXmlElementWrapper(useWrapping = false)
-    private List<Senders> senders;
+    private List<Sender> senders;
 
 }

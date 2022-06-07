@@ -11,20 +11,20 @@ public class process {
     public static void main(String[] args) {
         XmlMapper xmlMapper = new XmlMapper();
         Root value = xmlMapper.readValue(new File("src/main/resources/Cfg.xml"), Root.class);
-        Sender sender = new Sender();
+        ControlBlock controlBlock = new ControlBlock();
         GOOSE gse = new GOOSE(value.getSenders().get(0).getDataset());
-        sender.getGooseList().add(gse);
+        controlBlock.getGooseList().add(gse);
 
         Executors.newSingleThreadScheduledExecutor().schedule(
                 () -> {
                     value.getSenders().get(0).getDataset().getItems().get(0).setValue("true");
                     value.getSenders().get(0).getDataset().getItems().get(1).setValue("228");
                     value.getSenders().get(0).getDataset().getItems().get(2).setValue("14.2");
-                    sender.changeGoose(gse);
+                    controlBlock.changeGoose(gse);
                 }
                 , 10, TimeUnit.SECONDS);
 
-        sender.sender();
+        controlBlock.sender();
 
     }
 }

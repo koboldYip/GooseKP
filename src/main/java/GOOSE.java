@@ -300,6 +300,7 @@ public class GOOSE {
         headerBuffer.put(lenAllowTime, valueTimeAllowedToLive.array());
         headerBuffer.put(lenSq, valueSqNum.array());
         headerBuffer.put(lenT, valueT.array());
+        headerBuffer.put(lenSt, valueStNum.array());
 
         dataBuffer.clear();
         dataSet.getItems().forEach(this::typeValue);
