@@ -8,7 +8,6 @@ import org.pcap4j.packet.EthernetPacket;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.List;
 
 @Data
@@ -63,7 +62,7 @@ public class GOOSE implements Runnable {
     private ByteBuffer headerBuffer;
     private ByteBuffer dataBuffer;
 
-    private List<Integer> delays = Arrays.asList(0, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2000);
+    private int[] delays = new int[]{0, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2000};
     private long startTime;
     private long previousTime;
 
@@ -90,7 +89,7 @@ public class GOOSE implements Runnable {
         sendHandle.sendPacket(packet);
         valueSqNum = valueSqNum.putInt(1, ++sq);
         valueTimeAllowedToLive = valueTimeAllowedToLive
-                .putInt(1, (int) (delays.get(Math.min(sq + 1, delays.size() - 1)) * 1.5));
+                .putInt(1, (int) (delays[Math.min(sq + 1, delays.length - 1)] * 1.5));
         packet = EthernetPacket.newPacket(buffer.put(lenAllowTime, valueTimeAllowedToLive.array())
                 .put(lenSq, valueSqNum.array()).array(), 0, lenGoose);
     }
@@ -280,25 +279,25 @@ public class GOOSE implements Runnable {
         unPaused = false;
         sq = 0;
 
-        valueT = valueT.clear()
-                .putInt((int) (Instant.now().getEpochSecond()))
-                .putInt(Instant.now().getNano());
+        dataBuffer.clear();
+        dataSet.getItems().forEach(this::typeValue);
 
         valueSqNum = valueSqNum.putInt(1, sq);
         valueTimeAllowedToLive = valueTimeAllowedToLive
                 .putInt(1, 6);
         valueStNum = valueStNum.putInt(1, ++st);
 
-        headerBuffer.put(lenAllowTime, valueTimeAllowedToLive.array());
-        headerBuffer.put(lenSq, valueSqNum.array());
-        headerBuffer.put(lenT, valueT.array());
-        headerBuffer.put(lenSt, valueStNum.array());
+        valueT = valueT.clear()
+                .putInt((int) (Instant.now().getEpochSecond()))
+                .putInt(Instant.now().getNano());
 
-        dataBuffer.clear();
-        dataSet.getItems().forEach(this::typeValue);
+        headerBuffer.put(lenAllowTime, valueTimeAllowedToLive.array())
+                .put(lenSq, valueSqNum.array())
+                .put(lenT, valueT.array())
+                .put(lenSt, valueStNum.array());
 
-        buffer.clear();
-        buffer.put(headerBuffer.array())
+        buffer.clear()
+                .put(headerBuffer.array())
                 .put(dataBuffer.array());
 
         packet = EthernetPacket.newPacket(buffer.array(), 0, lenGoose);
@@ -308,7 +307,7 @@ public class GOOSE implements Runnable {
 
     public void send() {
         startTime = System.nanoTime();
-        if (startTime - previousTime >= delays.get(Math.min(sq, delays.size() - 1)) * 1000000L) {
+        if (startTime - previousTime >= delays[Math.min(sq, delays.length - 1)] * 1000000L) {
             run();
             previousTime = startTime;
         }
